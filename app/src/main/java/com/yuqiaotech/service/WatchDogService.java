@@ -11,13 +11,11 @@ import android.os.IBinder;
 import android.os.Message;
 
 import com.yuqiaotech.constants.WatchConstants;
+import com.yuqiaotech.preferences.AppInfoPreferences;
 import com.yuqiaotech.utils.AppUtil;
 
 public class WatchDogService extends Service {
-    private static final String TAG = "WatchDogService";
     private final int WHAT = 1;
-    private ActivityManager am;
-    private SharedPreferences spWatchDog;
     private Handler childHandler;
     private HandlerThread handlerThread;
 
@@ -29,7 +27,6 @@ public class WatchDogService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        spWatchDog = getSharedPreferences(WatchConstants.SP_WATCH, Context.MODE_PRIVATE);
         //创建异步HandlerThread
         handlerThread = new HandlerThread(WatchConstants.HANDLERTHREAD_NAME);
         //必须先开启线程
@@ -40,7 +37,7 @@ public class WatchDogService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String watchpackageName = spWatchDog.getString(WatchConstants.SP_PACKAGE_NAME, "");
+        String watchpackageName =  new AppInfoPreferences().getPackageName();
         Message msg = childHandler.obtainMessage();
         msg.what = WHAT;
         msg.obj = watchpackageName;
@@ -66,7 +63,7 @@ public class WatchDogService extends Service {
                 AppUtil.openApp(getApplication(),(String) msg.obj);
             }
             Message msg2=Message.obtain(msg);
-            childHandler.sendMessageDelayed(msg2, 3000);
+            childHandler.sendMessageDelayed(msg2, 5000);
             return false;
         }
     }

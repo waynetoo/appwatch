@@ -5,7 +5,11 @@ package com.yuqiaotech.constants;
  * Created by yun on 2018/5/16.
  */
 public class WatchConstants {
-    public static final String  SP_WATCH ="SP_WATCH";
-    public static final String  SP_PACKAGE_NAME ="SP_PACKAGE_NAME";
-    public static final String  HANDLERTHREAD_NAME ="HANDLERTHREAD_NAME";
+    public static final String SP_WATCH = "SP_WATCH";
+    public static final String HANDLERTHREAD_NAME = "HANDLERTHREAD_NAME";
+
+
+    public static final int SELECTED_APP_REQUESTCODE = 0x1;
+
+
 }

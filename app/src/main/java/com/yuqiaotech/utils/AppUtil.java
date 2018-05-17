@@ -4,16 +4,22 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.ActivityManager.RunningTaskInfo;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.ResolveInfo;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.text.TextUtils;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -241,4 +247,93 @@ public class AppUtil {
             return false;
         }
     }
+
+    public static ResolveInfo findAppByPackageName(Context context, String mPackageName) {
+        ResolveInfo newAppInfo = null;
+        // 用于存放临时应用程序
+        List<ResolveInfo> mTempAllApps;
+
+        PackageManager TempPackageManager = context.getPackageManager();
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        mainIntent.setPackage(mPackageName);
+        mTempAllApps = TempPackageManager.queryIntentActivities(mainIntent, 0);
+        newAppInfo = mTempAllApps.get(0);
+
+        return newAppInfo;
+    }
+
+    // 获得所有启动Activity的信息，类似于Launch界面
+    public static List<ResolveInfo> queryAppInfo(Context context) {
+        PackageManager pm = context.getPackageManager(); // 获得PackageManager对象
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        // 通过查询，获得所有ResolveInfo对象.
+        List<ResolveInfo> resolveInfos = pm
+                .queryIntentActivities(mainIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        // 调用系统排序 ， 根据name排序
+        // 该排序很重要，否则只能显示系统应用，而不能列出第三方应用程序
+        Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(pm));
+        for (ResolveInfo reInfo : resolveInfos) {
+            String activityName = reInfo.activityInfo.name; // 获得该应用程序的启动Activity的name
+            String pkgName = reInfo.activityInfo.packageName; // 获得应用程序的包名
+            String appLabel = (String) reInfo.loadLabel(pm); // 获得应用程序的Label
+            Drawable icon = reInfo.loadIcon(pm); // 获得应用程序图标
+            // 为应用程序的启动Activity 准备Intent
+            Intent launchIntent = new Intent();
+            launchIntent.setComponent(new ComponentName(pkgName,
+                    activityName));
+            // 创建一个AppInfo对象，并赋值
+            System.out.println(appLabel + " activityName---" + activityName
+                    + " pkgName---" + pkgName);
+        }
+        return resolveInfos;
+    }
+
+
+    /**
+     * 获取已安装非系统应用
+     *
+     * @return
+     */
+    public static List<ApplicationInfo> scanInstallApp(Context mContext) {
+        List<ApplicationInfo> appInfos = new ArrayList<>();
+        PackageManager pm = mContext.getPackageManager(); // 获得PackageManager对象
+        List<ApplicationInfo> listAppcations = pm
+                .getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES);
+        Collections.sort(listAppcations,
+                new ApplicationInfo.DisplayNameComparator(pm));// 字典排序
+        for (ApplicationInfo app : listAppcations) {
+            if ((app.flags & ApplicationInfo.FLAG_SYSTEM) <= 0) {//非系统程序
+                appInfos.add(app);
+            }//本来是系统程序，被用户手动更新后，该系统程序也成为第三方应用程序了
+            else if ((app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0) {
+                appInfos.add(app);
+            }
+        }
+        return appInfos;
+    }
+    /**
+     * 获取已安装非系统应用
+     *
+     * @return
+     */
+    public static List<ApplicationInfo> getThirdAppList(Context mContext) {
+        List<ApplicationInfo> thirdAPP = new ArrayList<>();
+        PackageManager pm = mContext.getPackageManager(); // 获得PackageManager对象
+        List<ApplicationInfo> listAppcations = pm
+                .getInstalledApplications(PackageManager.GET_UNINSTALLED_PACKAGES);
+        Collections.sort(listAppcations,
+                new ApplicationInfo.DisplayNameComparator(pm));// 字典排序
+        for (ApplicationInfo app : listAppcations) {
+            if ((app.flags & ApplicationInfo.FLAG_SYSTEM) <= 0) {//非系统程序
+                thirdAPP.add(app);
+            }//本来是系统程序，被用户手动更新后，该系统程序也成为第三方应用程序了
+            else if ((app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0) {
+//                appInfos.add(app);
+            }
+        }
+        return thirdAPP;
+    }
+
 }

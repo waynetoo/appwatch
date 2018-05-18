@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.yuqiaotech.appwatch">
 
     <application
@@ -19,15 +20,19 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity><activity
-            android:name=".AppListActivity"
-            android:theme="@style/AppTheme.NoActionBar">
         </activity>
+        <activity
+            android:name=".AppListActivity"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
 
         <service
             android:name="com.yuqiaotech.service.WatchDogService"
             android:enabled="true"
             android:exported="true"></service>
     </application>
+    <!--注意这里：添加权限-->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions"/>
 
 </manifest>

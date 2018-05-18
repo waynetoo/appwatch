@@ -30,7 +30,9 @@
                 android:id="@+id/app_icon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="5dp" />
+                android:layout_margin="5dp"
+                android:maxHeight="96dp"
+                android:maxWidth="96dp" />
 
             <TextView
                 android:id="@+id/app_name"
@@ -49,6 +51,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
+                android:background="@drawable/ripple_bg"
                 android:padding="5dp"
                 android:text="选择监控APP" />
         </LinearLayout>
@@ -56,11 +59,15 @@
 
     <Button
         android:id="@+id/btn_validate_packageName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:layout_marginLeft="10dp"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_margin="60dp"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:background="@drawable/ripple_bg_o"
         android:text="开启监控"
+        app:layout_constraintLeft_toLeftOf="@+id/cardView"
+        app:layout_constraintRight_toRightOf="@+id/cardView"
         app:layout_constraintTop_toBottomOf="@+id/cardView" />
 
 </android.support.constraint.ConstraintLayout>

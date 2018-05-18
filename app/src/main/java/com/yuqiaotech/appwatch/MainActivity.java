@@ -1,9 +1,13 @@
 package com.yuqiaotech.appwatch;
 
+import android.app.AppOpsManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -29,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isServerRunning;
 
     private String appPackageName;
+    private static final int MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS = 1101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +41,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initviews();
         initData();
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //申请权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (!hasPermission()) {
+                startActivityForResult(
+                        new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
+                        MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS);
+            }
+        }
     }
 
     private void initviews() {
@@ -63,10 +80,10 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "请先选择需要监控的APP", Toast.LENGTH_LONG).show();
                     return;
                 }
-
                 //验证包名
                 if (!isServerRunning) {
                     startWatchDogServer();
+//                    MainActivity.this.finish();
                 } else {
                     stopWatchDogServer();
                 }
@@ -123,6 +140,9 @@ public class MainActivity extends AppCompatActivity {
     // 回调方法，从第二个页面回来的时候会执行这个方法
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (null == data) {
+            return;
+        }
         String packagename = data.getStringExtra("packageName");
         if (TextUtils.isEmpty(packagename)) {
             return;
@@ -137,8 +157,28 @@ public class MainActivity extends AppCompatActivity {
                 startWatchDogServer();
                 setBtntxt();
                 break;
+            case MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS:
+                if (!hasPermission()) {
+                    //若用户未开启权限，则引导用户开启“Apps with usage access”权限
+                    startActivityForResult(
+                            new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
+                            MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS);
+                }
+                break;
             default:
                 break;
         }
+    }
+
+    //检测用户是否对本app开启了“Apps with usage access”权限
+    private boolean hasPermission() {
+        AppOpsManager appOps = (AppOpsManager)
+                getSystemService(Context.APP_OPS_SERVICE);
+        int mode = 0;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
+            mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(), getPackageName());
+        }
+        return mode == AppOpsManager.MODE_ALLOWED;
     }
 }

@@ -3,7 +3,8 @@ package com.yuqiaotech.utils;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
-import android.app.ActivityManager.RunningTaskInfo;
+import android.app.usage.UsageStats;
+import android.app.usage.UsageStatsManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -16,12 +17,16 @@ import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NavigableSet;
+import java.util.TreeMap;
 
 /**
  * 系统操作方法
@@ -116,72 +121,110 @@ public class AppUtil {
     /**
      * 应用是否在运行
      *
-     * @param ctx
      * @return
      */
-    public static boolean isRunning(Context ctx) {
-        if (null == ctx) {
-            return false;
-        }
-
-        String packageName = ctx.getPackageName();
-        ActivityManager am = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
-        if (TextUtils.isEmpty(packageName) || null == am) {
-            return false;
-        }
-
-        boolean isAppRunning = false;
-        List<RunningTaskInfo> list = am.getRunningTasks(50);
-        if (null == list || list.isEmpty()) {
-            return false;
-        }
-
-        for (RunningTaskInfo info : list) {
-            if (null == info) continue;
-
-            if ((info.topActivity != null && packageName.equals(info.topActivity.getPackageName()))
-                    || (info.baseActivity != null && packageName.equals(info.baseActivity.getPackageName()))) {
-                isAppRunning = true;
-                break;
-            }
-        }
-
-        return isAppRunning;
-    }
 
     /**
-     * 应用是否在运行
-     *
-     * @param ctx
-     * @return
+     * public static final int MOVE_TO_FOREGROUND = 1;
+     * public static final int MOVE_TO_BACKGROUND = 2;
+     * An event type denoting that a component moved to the foreground.
      */
-    public static boolean isRunning(Context ctx, String packageName) {
-        if (null == ctx) {
-            return false;
-        }
 
-        ActivityManager am = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
-        if (TextUtils.isEmpty(packageName) || null == am) {
-            return false;
-        }
 
-        boolean isAppRunning = false;
-        List<RunningTaskInfo> list = am.getRunningTasks(50);
-        if (null == list || list.isEmpty()) {
-            return false;
-        }
+    private static long start;
+    private static Field mLastEventField;
 
-        for (RunningTaskInfo info : list) {
-            if (null == info) continue;
+    public static boolean isAppRunning(Context context, String packageName) {
+       /* PackageManager pm = context.getPackageManager(); // 获得PackageManager对象
+        List<AndroidAppProcess> processes = AndroidProcesses.getRunningAppProcesses();
+        for (AndroidAppProcess process : processes) {
+            // Get some information about the process
+            String processName = process.name;
 
-            if ((info.topActivity != null && packageName.equals(info.topActivity.getPackageName()))
-                    || (info.baseActivity != null && packageName.equals(info.baseActivity.getPackageName()))) {
-                isAppRunning = true;
-                break;
+            if("com.yuqiaotech.appwatch".equals(processName)||"com.yuqiaotech.uncatch".equals(processName)) {
+                Stat stat = null;
+                try {
+                    stat = process.stat();
+                    int pid = stat.getPid();
+                    int parentProcessId = stat.ppid();
+                    long startTime = stat.stime();
+                    int policy = stat.policy();
+                    char state = stat.state();
+
+                    Statm statm = process.statm();
+                    long totalSizeOfProcess = statm.getSize();
+                    long residentSetSize = statm.getResidentSetSize();
+
+                    PackageInfo packageInfo = process.getPackageInfo(context, 0);
+                    String appName = packageInfo.applicationInfo.loadLabel(pm).toString();
+
+                    Log.e("isAppRunning", "processName-" + processName + ",pid-" + pid + ",appName-" + appName);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (NameNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
         }
+*/
 
-        return isAppRunning;
+
+        String topPackageName = null;
+        //改进版本的通过使用量统计功能获取前台应用
+        UsageStatsManager mUsageStatsManager = (UsageStatsManager) context.getApplicationContext().getSystemService(Context.USAGE_STATS_SERVICE);
+        long time = System.currentTimeMillis();
+        List<UsageStats> stats;
+        stats = mUsageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, time - 20 * 1000, time);
+
+// Sort the stats by the last time used
+        if (stats != null) {
+            TreeMap<Long, UsageStats> mySortedMap = new TreeMap<Long, UsageStats>();
+            start = System.currentTimeMillis();
+            for (UsageStats usageStats : stats) {
+                mySortedMap.put(usageStats.getLastTimeUsed(), usageStats);
+            }
+            Log.e("isAppRunning", "mySortedMap cost:" + (System.currentTimeMillis() - start) + " |mySortedMap: " + mySortedMap.size());
+            if (mySortedMap != null && !mySortedMap.isEmpty()) {
+
+                NavigableSet<Long> keySet = mySortedMap.navigableKeySet();
+                Iterator iterator = keySet.descendingIterator();
+                while (iterator.hasNext()) {
+                    UsageStats usageStats = mySortedMap.get(iterator.next());
+                    if (mLastEventField == null) {
+                        try {
+                            mLastEventField = UsageStats.class.getField("mLastEvent");
+                        } catch (NoSuchFieldException e) {
+                            break;
+                        }
+                    }
+                    if (mLastEventField != null) {
+                        int lastEvent = 0;
+                        try {
+                            lastEvent = mLastEventField.getInt(usageStats);
+                        } catch (IllegalAccessException e) {
+                            break;
+                        }
+                        if (lastEvent == 1) {
+                            topPackageName = usageStats.getPackageName();
+                            Log.e("isAppRunning", "topPackageName from while1 : " + topPackageName);
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                if (topPackageName == null) {
+                    topPackageName = mySortedMap.get(mySortedMap.lastKey()).getPackageName();
+                    Log.e("isAppRunning", "topPackageName from lastKey2 : " + topPackageName);
+                }
+                if (packageName.equals(topPackageName)) {
+                    return true;
+                }
+
+            }
+        }
+        return false;
     }
 
     /**
@@ -191,6 +234,7 @@ public class AppUtil {
      * @param className 判断的服务名字 "com.xxx.xx..XXXService"
      * @return true 运行中
      */
+
     public static boolean isServiceRunning(Context ctx, String className) {
         boolean isRunning = false;
         ActivityManager activityManager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
@@ -313,6 +357,7 @@ public class AppUtil {
         }
         return appInfos;
     }
+
     /**
      * 获取已安装非系统应用
      *

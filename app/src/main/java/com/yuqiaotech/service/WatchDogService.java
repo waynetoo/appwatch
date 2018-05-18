@@ -56,7 +56,7 @@ public class WatchDogService extends Service {
         @Override
         public boolean handleMessage(Message msg) {
             //在子线程中
-            if(!AppUtil.isRunning(getApplication(),(String) msg.obj)){
+            if(!AppUtil.isAppRunning(getApplication(),(String) msg.obj)){
                 AppUtil.openApp(getApplication(),(String) msg.obj);
             }
             Message msg2=Message.obtain(msg);

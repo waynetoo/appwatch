@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-/**
- * @author chenjian
- * @date 2013-9-5
- */
 
 public abstract class PcAbsPreferences {
 

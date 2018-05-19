@@ -5,15 +5,11 @@ package com.yuqiaotech.constants;
  * Created by yun on 2018/5/16.
  */
 public class WatchConstants {
-    public static final String SP_WATCH = "SP_WATCH";
     public static final String HANDLERTHREAD_NAME = "HANDLERTHREAD_NAME";
-
-
     public static final int SELECTED_APP_REQUESTCODE = 0x1;
 
     public static final String DEFALUT_PACKAGENAME = "com.wangdie.advertisement";
 //    public static final String  DEFALUT_PACKAGENAME="com.yuqiaotech.uncatch";
-
 
     // 最上层activity 获取此段活动时间内的状态
     public static final long GET_TOP_ACTIVITY_STATUS_DELTA_TIME = 13 * 1000;

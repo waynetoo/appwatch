@@ -11,7 +11,7 @@ public class WatchConstants {
     public static final String DEFALUT_PACKAGENAME = "com.wangdie.advertisement";
 //    public static final String  DEFALUT_PACKAGENAME="com.yuqiaotech.uncatch";
 
-    // 最上层activity 获取此段活动时间内的状态
+    // 最上层activity 获取此段活动时间内的状态， 因为只能获取至今13秒之类的 activity 切换状态，如果没有切换，则会切到广告app
     public static final long GET_TOP_ACTIVITY_STATUS_DELTA_TIME = 13 * 1000;
 
     //  service的刷新时间

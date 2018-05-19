@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
+import android.text.TextUtils;
 
 import com.yuqiaotech.constants.WatchConstants;
 import com.yuqiaotech.preferences.AppInfoPreferences;
@@ -15,6 +16,8 @@ public class WatchDogService extends Service {
     private final int WHAT = 1;
     private Handler childHandler;
     private HandlerThread handlerThread;
+    private volatile String mCurrenOtherPackageName;
+    private volatile  int i=0;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -34,7 +37,7 @@ public class WatchDogService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String watchpackageName =  new AppInfoPreferences().getPackageName();
+        String watchpackageName =  new AppInfoPreferences().getPackageName(WatchConstants.DEFALUT_PACKAGENAME);
         Message msg = childHandler.obtainMessage();
         msg.what = WHAT;
         msg.obj = watchpackageName;
@@ -55,13 +58,29 @@ public class WatchDogService extends Service {
     class ChildCallback implements Handler.Callback {
         @Override
         public boolean handleMessage(Message msg) {
-            //在子线程中
-            if(!AppUtil.isAppRunning(getApplication(),(String) msg.obj)){
-                AppUtil.openApp(getApplication(),(String) msg.obj);
+            // foreground app 20s no change ,maybe crash
+            // 在子线程中
+            if (!AppUtil.isAppRunning(getApplication(), (String) msg.obj)) {
+                // background
+                String currOtherPackageName = AppUtil.getForegroundAppPageName(getApplication());
+                if (!TextUtils.isEmpty(currOtherPackageName) && currOtherPackageName.equals(mCurrenOtherPackageName)) {
+                    // same 20s open app
+//                    if (++i >= 2) {
+                        AppUtil.openApp(getApplication(), (String) msg.obj);
+                        mCurrenOtherPackageName = null;
+//                    }
+                } else {
+                    // different
+                    mCurrenOtherPackageName = currOtherPackageName;
+//                    i = 0;
+                }
+
             }
-            Message msg2=Message.obtain(msg);
-            childHandler.sendMessageDelayed(msg2, 5000);
+            Message msg2 = Message.obtain(msg);
+            childHandler.sendMessageDelayed(msg2, 10 * 1000); //10s refresh again
             return false;
+
+
         }
     }
 }

@@ -11,5 +11,8 @@ public class WatchConstants {
 
     public static final int SELECTED_APP_REQUESTCODE = 0x1;
 
+    public static final String  DEFALUT_PACKAGENAME="com.wangdie.advertisement";
+//    public static final String  DEFALUT_PACKAGENAME="com.yuqiaotech.uncatch";
+
 
 }

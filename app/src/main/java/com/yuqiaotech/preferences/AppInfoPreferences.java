@@ -18,8 +18,8 @@ public class AppInfoPreferences extends PcAbsPreferences {
     }
 
 
-    public String getPackageName() {
-        return getString(SP_PACKAGE_NAME, "");
+    public String getPackageName(String  defalutVal) {
+        return getString(SP_PACKAGE_NAME, defalutVal);
     }
 
     public String removedPackageName( ) {

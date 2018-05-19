@@ -29,6 +29,16 @@
             android:name="com.yuqiaotech.service.WatchDogService"
             android:enabled="true"
             android:exported="true"></service>
+
+        <receiver android:name="com.yuqiaotech.receiver.BootBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.intent.action.BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </receiver>
     </application>
     <!--注意这里：添加权限-->
     <uses-permission

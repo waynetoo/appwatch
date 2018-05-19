@@ -3,24 +3,24 @@ package com.yuqiaotech.appwatch;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.yuqiaotech.app.AppWatchApplication;
+import com.yuqiaotech.constants.WatchConstants;
 import com.yuqiaotech.preferences.AppInfoPreferences;
 import com.yuqiaotech.service.WatchDogService;
-import com.yuqiaotech.utils.AppUtil;
 
 import static com.yuqiaotech.constants.WatchConstants.SELECTED_APP_REQUESTCODE;
 
@@ -94,22 +94,24 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void initData() {
-        appPackageName = new AppInfoPreferences().getPackageName();
-        isServerRunning = AppUtil.isServiceRunning(this, WatchDogService.class.getName());
+        appPackageName = new AppInfoPreferences().getPackageName(WatchConstants.DEFALUT_PACKAGENAME);
+//        isServerRunning = AppUtil.isServiceRunning(this, WatchDogService.class.getName());
         if (!TextUtils.isEmpty(appPackageName)) {
-            ResolveInfo resolveInfo = AppUtil.findAppByPackageName(this, appPackageName);
-            setAppInfo(resolveInfo);
+            startWatchDogServer();
+            setAppInfo(appPackageName);
             setBtntxt();
         }
     }
 
-    private void setAppInfo(ResolveInfo resolveInfo) {
-        if (null == resolveInfo) {
-            return;
+    private void setAppInfo(String packname) {
+        PackageManager pm = getPackageManager(); // 获得PackageManager对象
+        try {
+            ApplicationInfo info = pm.getApplicationInfo(packname, 0);
+            icon.setImageDrawable(info.loadIcon(pm));
+            appName.setText(info.loadLabel(pm));
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
-        PackageManager pm = AppWatchApplication.getApplication().getPackageManager(); // 获得PackageManager对象
-        icon.setImageDrawable(resolveInfo.loadIcon(pm));
-        appName.setText(resolveInfo.loadLabel(pm));
     }
 
     private void setBtntxt() {
@@ -150,10 +152,10 @@ public class MainActivity extends AppCompatActivity {
         // 根据上面发送过去的请求吗来区别
         switch (requestCode) {
             case SELECTED_APP_REQUESTCODE:
+                Log.e("packagename", packagename);
                 appPackageName = packagename;
-                new AppInfoPreferences().putPackageName(appPackageName);
-                ResolveInfo resolveInfo = AppUtil.findAppByPackageName(this, appPackageName);
-                setAppInfo(resolveInfo);
+                new AppInfoPreferences().putPackageName(appPackageName);//save
+                setAppInfo(appPackageName);
                 startWatchDogServer();
                 setBtntxt();
                 break;

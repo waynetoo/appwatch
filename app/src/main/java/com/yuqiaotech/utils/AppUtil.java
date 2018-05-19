@@ -183,7 +183,7 @@ public class AppUtil {
             for (UsageStats usageStats : stats) {
                 mySortedMap.put(usageStats.getLastTimeUsed(), usageStats);
             }
-            Log.e("isAppRunning", "mySortedMap cost:" + (System.currentTimeMillis() - start) + " |mySortedMap: " + mySortedMap.size());
+            Log.e("isAppRunning",  " |mySortedMap: " + mySortedMap.size());
             if (mySortedMap != null && !mySortedMap.isEmpty()) {
 
                 NavigableSet<Long> keySet = mySortedMap.navigableKeySet();
@@ -225,6 +225,63 @@ public class AppUtil {
             }
         }
         return false;
+    }
+
+
+    public static String getForegroundAppPageName(Context context) {
+
+        String topPackageName = null;
+        //改进版本的通过使用量统计功能获取前台应用
+        UsageStatsManager mUsageStatsManager = (UsageStatsManager) context.getApplicationContext().getSystemService(Context.USAGE_STATS_SERVICE);
+        long time = System.currentTimeMillis();
+        List<UsageStats> stats;
+        stats = mUsageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, time - 20 * 1000, time);
+
+// Sort the stats by the last time used
+        if (stats != null) {
+            TreeMap<Long, UsageStats> mySortedMap = new TreeMap<Long, UsageStats>();
+            start = System.currentTimeMillis();
+            for (UsageStats usageStats : stats) {
+                mySortedMap.put(usageStats.getLastTimeUsed(), usageStats);
+            }
+            Log.e("isAppRunning",  " |mySortedMap: " + mySortedMap.size());
+            if (mySortedMap != null && !mySortedMap.isEmpty()) {
+
+                NavigableSet<Long> keySet = mySortedMap.navigableKeySet();
+                Iterator iterator = keySet.descendingIterator();
+                while (iterator.hasNext()) {
+                    UsageStats usageStats = mySortedMap.get(iterator.next());
+                    if (mLastEventField == null) {
+                        try {
+                            mLastEventField = UsageStats.class.getField("mLastEvent");
+                        } catch (NoSuchFieldException e) {
+                            break;
+                        }
+                    }
+                    if (mLastEventField != null) {
+                        int lastEvent = 0;
+                        try {
+                            lastEvent = mLastEventField.getInt(usageStats);
+                        } catch (IllegalAccessException e) {
+                            break;
+                        }
+                        if (lastEvent == 1) {
+                            topPackageName = usageStats.getPackageName();
+                            Log.e("isAppRunning", "topPackageName from while1 : " + topPackageName);
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                if (topPackageName == null) {
+                    topPackageName = mySortedMap.get(mySortedMap.lastKey()).getPackageName();
+                    Log.e("isAppRunning", "topPackageName from lastKey2 : " + topPackageName);
+                }
+            }
+        }
+        return topPackageName;
     }
 
     /**
@@ -302,7 +359,9 @@ public class AppUtil {
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         mainIntent.setPackage(mPackageName);
         mTempAllApps = TempPackageManager.queryIntentActivities(mainIntent, 0);
-        newAppInfo = mTempAllApps.get(0);
+        if(mTempAllApps.size()>0){
+            newAppInfo = mTempAllApps.get(0);
+        }
 
         return newAppInfo;
     }

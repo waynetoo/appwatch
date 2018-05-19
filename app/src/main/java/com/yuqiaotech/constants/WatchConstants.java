@@ -11,8 +11,13 @@ public class WatchConstants {
 
     public static final int SELECTED_APP_REQUESTCODE = 0x1;
 
-    public static final String  DEFALUT_PACKAGENAME="com.wangdie.advertisement";
+    public static final String DEFALUT_PACKAGENAME = "com.wangdie.advertisement";
 //    public static final String  DEFALUT_PACKAGENAME="com.yuqiaotech.uncatch";
 
 
+    // 最上层activity 获取此段活动时间内的状态
+    public static final long GET_TOP_ACTIVITY_STATUS_DELTA_TIME = 13 * 1000;
+
+    //  service的刷新时间
+    public static final long WATCH_DOG_SERVICE_FRESH_TIME = 8 * 1000;
 }

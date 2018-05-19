@@ -19,6 +19,8 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.yuqiaotech.constants.WatchConstants;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -183,7 +185,7 @@ public class AppUtil {
             for (UsageStats usageStats : stats) {
                 mySortedMap.put(usageStats.getLastTimeUsed(), usageStats);
             }
-            Log.e("isAppRunning",  " |mySortedMap: " + mySortedMap.size());
+            Log.e("isAppRunning", " |mySortedMap: " + mySortedMap.size());
             if (mySortedMap != null && !mySortedMap.isEmpty()) {
 
                 NavigableSet<Long> keySet = mySortedMap.navigableKeySet();
@@ -228,7 +230,78 @@ public class AppUtil {
     }
 
 
-    public static String getForegroundAppPageName(Context context) {
+    /**
+     * 获取进入前台的时间
+     *
+     * @param context
+     * @return
+     */
+    public static long getMoveForegroundTime(Context context) {
+        long lastUsedTime = -1;
+        String topPackageName = null;
+        //改进版本的通过使用量统计功能获取前台应用
+        UsageStatsManager mUsageStatsManager = (UsageStatsManager) context.getApplicationContext().getSystemService(Context.USAGE_STATS_SERVICE);
+        long time = System.currentTimeMillis();
+        List<UsageStats> stats;
+        stats = mUsageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, time - WatchConstants.GET_TOP_ACTIVITY_STATUS_DELTA_TIME, time);
+
+// Sort the stats by the last time used
+        if (stats != null) {
+            TreeMap<Long, UsageStats> mySortedMap = new TreeMap<Long, UsageStats>();
+            start = System.currentTimeMillis();
+            for (UsageStats usageStats : stats) {
+                mySortedMap.put(usageStats.getLastTimeUsed(), usageStats);
+            }
+            Log.e("isAppRunning", " |mySortedMap: " + mySortedMap.size());
+            if (mySortedMap != null && !mySortedMap.isEmpty()) {
+
+                NavigableSet<Long> keySet = mySortedMap.navigableKeySet();
+                Iterator iterator = keySet.descendingIterator();
+                while (iterator.hasNext()) {
+                    UsageStats usageStats = mySortedMap.get(iterator.next());
+                    if (mLastEventField == null) {
+                        try {
+                            mLastEventField = UsageStats.class.getField("mLastEvent");
+                        } catch (NoSuchFieldException e) {
+                            break;
+                        }
+                    }
+                    if (mLastEventField != null) {
+                        int lastEvent = 0;
+                        try {
+                            lastEvent = mLastEventField.getInt(usageStats);
+                        } catch (IllegalAccessException e) {
+                            break;
+                        }
+                        if (lastEvent == 1) {
+                            topPackageName = usageStats.getPackageName();
+                            lastUsedTime = usageStats.getLastTimeUsed();
+                            Log.e("isAppRunning", "topPackageName from while1 : " + topPackageName + "  |lastUsedTime" + lastUsedTime);
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                if (topPackageName == null) {
+                    topPackageName = mySortedMap.get(mySortedMap.lastKey()).getPackageName();
+                    lastUsedTime = mySortedMap.get(mySortedMap.lastKey()).getLastTimeUsed();
+                    Log.e("isAppRunning", "topPackageName from lastKey2 : " + topPackageName + "  |lastUsedTime" + lastUsedTime);
+                }
+            }
+        }
+        return lastUsedTime;
+    }
+
+
+    /**
+     * 获取顶层的包名
+     *
+     * @param context
+     * @return
+     */
+    public static String getForegroundAppPackageName(Context context) {
 
         String topPackageName = null;
         //改进版本的通过使用量统计功能获取前台应用
@@ -244,7 +317,7 @@ public class AppUtil {
             for (UsageStats usageStats : stats) {
                 mySortedMap.put(usageStats.getLastTimeUsed(), usageStats);
             }
-            Log.e("isAppRunning",  " |mySortedMap: " + mySortedMap.size());
+            Log.e("isAppRunning", " |mySortedMap: " + mySortedMap.size());
             if (mySortedMap != null && !mySortedMap.isEmpty()) {
 
                 NavigableSet<Long> keySet = mySortedMap.navigableKeySet();
@@ -359,7 +432,7 @@ public class AppUtil {
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         mainIntent.setPackage(mPackageName);
         mTempAllApps = TempPackageManager.queryIntentActivities(mainIntent, 0);
-        if(mTempAllApps.size()>0){
+        if (mTempAllApps.size() > 0) {
             newAppInfo = mTempAllApps.get(0);
         }
 
